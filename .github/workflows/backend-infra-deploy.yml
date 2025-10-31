@@ -44,6 +44,12 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
           audience: sts.amazonaws.com
 
+      - name: Verify AWS credentials
+        run: |
+          echo "Verifying AWS credentials..."
+          aws sts get-caller-identity
+          echo "AWS credentials verified successfully"
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
@@ -75,9 +81,7 @@ jobs:
         with:
           context: ./backend
           push: true
-          tags: |
-            ${{ steps.ecr-registry.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
-            ${{ steps.ecr-registry.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.env.outputs.tag }}
+          tags: ${{ steps.ecr-registry.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
           no-cache: true
 
       - name: Output image URI
