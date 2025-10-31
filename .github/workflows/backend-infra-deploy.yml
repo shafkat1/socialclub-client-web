@@ -68,8 +68,6 @@ jobs:
             ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
             ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ steps.env.outputs.tag }}
           no-cache: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Output image URI
         id: image

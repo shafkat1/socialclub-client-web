@@ -3,8 +3,9 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files only
-COPY package*.json ./
+# Copy ALL essential files from backend directory
+# These must exist for the build to work
+COPY package*.json tsconfig.json nest-cli.json ./
 
 # Install dependencies
 RUN npm ci --legacy-peer-deps
@@ -12,11 +13,11 @@ RUN npm ci --legacy-peer-deps
 # Copy source code
 COPY src ./src
 
-# Copy prisma schema (if it exists)
-RUN test -d prisma && cp -r prisma . || echo "No prisma schema"
+# Copy prisma schema if available, but don't fail if not
+RUN if [ -d prisma ]; then cp -r prisma .; fi
 
-# Generate Prisma client
-RUN npx prisma generate 2>/dev/null || echo "Prisma generation skipped"
+# Generate Prisma client if schema exists
+RUN npx prisma generate 2>/dev/null || true
 
 # Build application
 RUN npm run build
@@ -39,7 +40,7 @@ RUN npm ci --only=production --legacy-peer-deps && npm cache clean --force
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma 2>/dev/null || true
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
