@@ -166,9 +166,6 @@ resource "aws_iam_role_policy" "github_actions_terraform" {
   })
 }
 
-# Data source to get current AWS account ID
-data "aws_caller_identity" "current" {}
-
 # Output the role ARN for GitHub secrets
 output "github_actions_role_arn" {
   description = "ARN of the GitHub Actions OIDC role to use in GitHub repository secrets"
