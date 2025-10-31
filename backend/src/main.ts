@@ -63,3 +63,4 @@ bootstrap().catch((error) => {
   console.error('❌ Bootstrap error:', error);
   process.exit(1);
 });
+// Deployment ready
