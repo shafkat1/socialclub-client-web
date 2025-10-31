@@ -10,7 +10,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { VenuesModule } from './modules/venues/venues.module';
 import { OrdersModule } from './modules/orders/orders.module';
-import { MessagesModule } from './modules/messages/messages.module';
 import { GroupsModule } from './modules/groups/groups.module';
 import { PresenceModule } from './modules/presence/presence.module';
 import { RedemptionsModule } from './modules/redemptions/redemptions.module';
@@ -48,7 +47,6 @@ import { SentryInterceptor } from './common/interceptors/sentry.interceptor';
     UsersModule,
     VenuesModule,
     OrdersModule,
-    MessagesModule,
     GroupsModule,
     PresenceModule,
     RedemptionsModule,
