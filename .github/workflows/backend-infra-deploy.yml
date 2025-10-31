@@ -42,6 +42,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
 
       - name: Login to Amazon ECR
         id: login-ecr
@@ -94,6 +95,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
 
       - name: Terraform Format Check
         id: fmt
@@ -176,6 +178,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
 
       - name: Determine environment
         id: env
@@ -232,40 +235,8 @@ jobs:
           echo "❌ Service did not reach desired state"
           exit 1
 
-      - name: Slack notification (Success)
-        if: success()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
-          payload: |
-            {
-              "text": "Backend deployment successful",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "✅ Backend deployed to *${{ steps.env.outputs.environment }}*\nImage: `${{ needs.build-backend.outputs.image-uri }}`\nBranch: `${{ github.ref_name }}`"
-                  }
-                }
-              ]
-            }
-
-      - name: Slack notification (Failure)
-        if: failure()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
-          payload: |
-            {
-              "text": "Backend deployment failed",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "❌ Backend deployment failed\nBranch: `${{ github.ref_name }}`\nCheck logs for details"
-                  }
-                }
-              ]
-            }
+      - name: Deployment Summary
+        run: |
+          echo "✅ Backend deployment complete"
+          echo "Environment: ${{ steps.env.outputs.environment }}"
+          echo "Image URI: ${{ needs.build-backend.outputs.image-uri }}"

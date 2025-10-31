@@ -47,6 +47,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+          audience: sts.amazonaws.com
 
       - name: Determine S3 bucket
         id: bucket
@@ -62,6 +63,7 @@ jobs:
           fi
 
       - name: Upload to S3
+        if: steps.bucket.outputs.bucket != ''
         run: |
           aws s3 sync dist/ s3://${{ steps.bucket.outputs.bucket }}/ \
             --delete \
@@ -73,45 +75,15 @@ jobs:
             --content-type "text/html"
 
       - name: Invalidate CloudFront
+        if: steps.bucket.outputs.distribution != ''
         run: |
           aws cloudfront create-invalidation \
             --distribution-id ${{ steps.bucket.outputs.distribution }} \
             --paths "/*"
 
-      - name: Slack notification (Success)
-        if: success()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
-          payload: |
-            {
-              "text": "Frontend deployment successful",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "✅ Frontend deployed to *${{ steps.bucket.outputs.environment }}*\nBranch: `${{ github.ref_name }}`\nCommit: `${{ github.sha }}`"
-                  }
-                }
-              ]
-            }
-
-      - name: Slack notification (Failure)
-        if: failure()
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK }}
-          payload: |
-            {
-              "text": "Frontend deployment failed",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "❌ Frontend deployment failed\nBranch: `${{ github.ref_name }}`\nCommit: `${{ github.sha }}`"
-                  }
-                }
-              ]
-            }
+      - name: Deployment Summary
+        run: |
+          echo "✅ Frontend build complete"
+          echo "Environment: ${{ steps.bucket.outputs.environment }}"
+          echo "S3 Bucket: ${{ steps.bucket.outputs.bucket }}"
+          echo "CloudFront: ${{ steps.bucket.outputs.distribution }}"
