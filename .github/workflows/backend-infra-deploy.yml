@@ -113,7 +113,9 @@ jobs:
 
       - name: Terraform Validate
         id: validate
-        run: terraform validate -json ./infra/terraform
+        run: |
+          cd infra/terraform
+          terraform validate -json
 
       - name: Terraform Plan
         id: plan
