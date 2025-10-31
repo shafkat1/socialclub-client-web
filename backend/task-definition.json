@@ -32,11 +32,11 @@
       "secrets": [
         {
           "name": "DATABASE_URL",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:425687053209:secret:clubapp/database/database-url"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:425687053209:secret:socialclub/database/database-url"
         },
         {
           "name": "REDIS_URL",
-          "valueFrom": "arn:aws:secretsmanager:us-east-1:425687053209:secret:clubapp/database/redis-url"
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:425687053209:secret:socialclub/database/redis-url"
         }
       ],
       "logConfiguration": {

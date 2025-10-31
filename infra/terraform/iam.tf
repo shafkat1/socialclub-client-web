@@ -33,7 +33,11 @@ resource "aws_iam_role_policy" "task_access" {
   policy = jsonencode({
     Version = "2012-10-17",
     Statement = [
-      { "Effect": "Allow", "Action": ["secretsmanager:GetSecretValue"], "Resource": [aws_secretsmanager_secret.db_password.arn] },
+      { "Effect": "Allow", "Action": ["secretsmanager:GetSecretValue"], "Resource": [
+          aws_secretsmanager_secret.db_password.arn,
+          "arn:aws:secretsmanager:us-east-1:425687053209:secret:socialclub/database/database-url*",
+          "arn:aws:secretsmanager:us-east-1:425687053209:secret:socialclub/database/redis-url*"
+        ] },
       { "Effect": "Allow", "Action": ["kms:Decrypt"], "Resource": [aws_kms_key.main.arn] },
       { "Effect": "Allow", "Action": ["s3:GetObject", "s3:PutObject"], "Resource": [
           aws_s3_bucket.assets.arn,
