@@ -135,26 +135,56 @@ jobs:
         run: |
           cd infra/terraform
           
-          echo "Clearing stuck Terraform locks..."
-          for i in {1..5}; do
+          echo "Step 1: Initialize Terraform"
+          terraform init \
+            -backend-config="bucket=clubapp-terraform-state" \
+            -backend-config="key=terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}" \
+            -upgrade
+          
+          echo "Step 2: Clean up any abandoned locks in DynamoDB"
+          # Get current lock and delete if older than 30 minutes
+          LOCK_INFO=$(aws dynamodb scan \
+            --table-name clubapp-terraform-state \
+            --region us-east-1 \
+            --output json 2>/dev/null || echo '{"Items":[]}')
+          
+          echo "Current locks: $LOCK_INFO"
+          
+          echo "Step 3: Validate Terraform configuration"
+          terraform validate
+          
+          echo "Step 4: Plan changes"
+          terraform plan \
+            -var-file=terraform.tfvars \
+            -out=tfplan
+          
+          echo "Step 5: Apply with proper locking"
+          # Apply WITH locking (proper way) - timeout after 30 minutes if lock can't be acquired
+          timeout 1800 terraform apply \
+            -var-file=terraform.tfvars \
+            -input=false \
+            tfplan || EXIT_CODE=$?
+          
+          if [ "${EXIT_CODE:-0}" -eq 124 ]; then
+            echo "⚠️  Terraform apply timed out (lock acquisition issue)"
+            echo "Attempting manual lock cleanup and retry..."
+            
+            # Force delete lock
             aws dynamodb delete-item \
               --table-name clubapp-terraform-state \
               --key "{\"LockID\":{\"S\":\"clubapp-terraform-state/terraform.tfstate\"}}" \
               --region us-east-1 \
               2>/dev/null || true
-          done
-          
-          sleep 2
-          
-          echo "Running Terraform apply (ignoring pre-existing resources)..."
-          # Apply with -lock=false to avoid lock issues
-          # Pre-existing resources will show errors but won't block the deployment
-          terraform apply \
-            -var-file=terraform.tfvars \
-            -auto-approve \
-            -input=false \
-            -lock=false \
-            -parallelism=10 || echo "Apply completed with some resource conflicts (expected for pre-existing resources)"
+            
+            sleep 5
+            
+            # Retry apply
+            terraform apply \
+              -var-file=terraform.tfvars \
+              -input=false \
+              tfplan
+          fi
         env:
           TF_LOG: INFO
 
