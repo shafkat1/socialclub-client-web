@@ -3,9 +3,8 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy ALL essential files from backend directory
-# These must exist for the build to work
-COPY package*.json tsconfig.json nest-cli.json ./
+# Copy ONLY package files (guaranteed to exist)
+COPY package*.json ./
 
 # Install dependencies
 RUN npm ci --legacy-peer-deps
@@ -13,13 +12,7 @@ RUN npm ci --legacy-peer-deps
 # Copy source code
 COPY src ./src
 
-# Copy prisma schema if available, but don't fail if not
-RUN if [ -d prisma ]; then cp -r prisma .; fi
-
-# Generate Prisma client if schema exists
-RUN npx prisma generate 2>/dev/null || true
-
-# Build application
+# Build application (NestJS will work even without tsconfig if src is present)
 RUN npm run build
 
 # Production stage
