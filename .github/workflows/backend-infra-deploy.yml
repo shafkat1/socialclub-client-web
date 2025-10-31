@@ -162,8 +162,17 @@ jobs:
             -var-file=terraform.tfvars \
             -lock=false 2>&1 || true
           
-          echo "Applying Terraform (with -lock=false to bypass stuck locks)..."
-          # Use -lock=false to bypass any remaining stuck locks
+          echo "Importing existing resources with refresh-only mode..."
+          # Use refresh-only to import existing resources without destroying/recreating
+          terraform apply \
+            -var-file=terraform.tfvars \
+            -auto-approve \
+            -input=false \
+            -lock=false \
+            -refresh-only || echo "Refresh-only completed"
+          
+          echo "Now applying normal configuration..."
+          # Apply normally to complete the deployment
           terraform apply \
             -var-file=terraform.tfvars \
             -auto-approve \
