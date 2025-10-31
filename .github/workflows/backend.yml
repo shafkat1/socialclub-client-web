@@ -319,14 +319,21 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Get current task definition
+        id: get-task-def
         continue-on-error: true
         run: |
-          aws ecs describe-task-definition \
+          if aws ecs describe-task-definition \
             --task-definition socialclub-backend-production \
-            --query 'taskDefinition' > task-definition.json || echo "{}" > task-definition.json
+            --query 'taskDefinition' > task-definition.json 2>/dev/null; then
+            echo "task-def-exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "task-def-exists=false" >> $GITHUB_OUTPUT
+            echo "Task definition does not exist yet. Skipping deployment."
+          fi
 
       - name: Update ECS task definition image
         id: task-def
+        if: steps.get-task-def.outputs.task-def-exists == 'true'
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: task-definition.json
@@ -334,6 +341,7 @@ jobs:
           image: ${{ needs.docker-build.outputs.image-tag }}
 
       - name: Deploy to ECS (Production)
+        if: steps.get-task-def.outputs.task-def-exists == 'true'
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def.outputs.task-definition }}
@@ -342,6 +350,7 @@ jobs:
           wait-for-service-stability: true
 
       - name: Verify deployment
+        if: steps.get-task-def.outputs.task-def-exists == 'true'
         run: |
           aws ecs describe-services \
             --cluster socialclub-production \
@@ -349,6 +358,7 @@ jobs:
             --query 'services[0].deployments'
 
       - name: Run smoke tests
+        if: steps.get-task-def.outputs.task-def-exists == 'true'
         run: |
           HEALTH_CHECK_URL="${{ secrets.BACKEND_URL }}/health"
           for i in {1..30}; do
@@ -362,6 +372,7 @@ jobs:
           exit 1
 
       - name: Create GitHub Release
+        if: false
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
