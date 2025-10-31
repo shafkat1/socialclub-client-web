@@ -37,3 +37,9 @@ variable "enable_domain" {
   type        = bool
   default     = false
 }
+
+variable "additional_tags" {
+  description = "Additional tags to apply to all resources"
+  type        = map(string)
+  default     = {}
+}
