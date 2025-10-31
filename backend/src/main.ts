@@ -75,3 +75,4 @@ bootstrap().catch((error) => {
 // Plan fallback
 // Docker simplify
 // Build fix v2
+// Prod stage fix
