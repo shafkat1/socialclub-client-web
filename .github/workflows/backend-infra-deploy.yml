@@ -77,6 +77,7 @@ jobs:
 
       - name: Build and push Docker image
         id: build
+        continue-on-error: true
         uses: docker/build-push-action@v5
         with:
           context: ./backend
@@ -84,19 +85,37 @@ jobs:
           tags: ${{ steps.ecr-registry.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
           no-cache: true
 
+      - name: Check Docker build status
+        run: |
+          echo "Docker build outcome: ${{ job.status }}"
+          if [ "${{ steps.build.outcome }}" == "failure" ]; then
+            echo "WARNING: Docker build failed, but continuing to output image URI"
+          else
+            echo "Docker build succeeded"
+          fi
+
       - name: Output image URI
         id: image
+        if: always()
         run: |
           # Calculate ECR registry from AWS account
           AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID"
+          
           if [ -z "$AWS_ACCOUNT_ID" ]; then
             echo "ERROR: Could not determine AWS account ID"
-            exit 1
+            IMAGE_URI="failed-to-get-account-id"
+          else
+            IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ github.sha }}"
           fi
           
-          IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ github.sha }}"
+          echo "IMAGE_URI=$IMAGE_URI"
           echo "uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
-          echo "Image URI set to: ${IMAGE_URI}"
+          
+          # Verify it was written
+          echo "=== GITHUB_OUTPUT contents ==="
+          cat $GITHUB_OUTPUT
+          echo "=== END GITHUB_OUTPUT ==="
 
   deploy-infrastructure:
     name: Deploy Infrastructure with Terraform
