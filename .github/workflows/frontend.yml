@@ -159,14 +159,10 @@ jobs:
             --distribution-id ${{ secrets.AWS_CLOUDFRONT_STAGING_ID }} \
             --paths "/*"
 
-      - name: Slack notification
-        uses: 8398a7/action-slack@v3
-        if: always()
-        with:
-          status: ${{ job.status }}
-          text: 'Staging deployment ${{ job.status }}'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-          fields: repo,message,commit,author
+      - name: Staging Deployment Summary
+        run: |
+          echo "✅ Staging deployment complete"
+          echo "S3 Bucket: ${{ secrets.AWS_S3_STAGING_BUCKET }}"
 
   deploy-production:
     name: Deploy to Production
@@ -202,23 +198,8 @@ jobs:
             --distribution-id ${{ secrets.AWS_CLOUDFRONT_PRODUCTION_ID }} \
             --paths "/*"
 
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: frontend-v${{ github.run_number }}
-          release_name: Frontend Release ${{ github.run_number }}
-          body: |
-            Frontend deployment for commit ${{ github.sha }}
-          draft: false
-          prerelease: false
-
-      - name: Slack notification
-        uses: 8398a7/action-slack@v3
-        if: always()
-        with:
-          status: ${{ job.status }}
-          text: 'Production deployment ${{ job.status }}'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-          fields: repo,message,commit,author
+      - name: Deployment Summary
+        run: |
+          echo "✅ Production deployment complete"
+          echo "S3 Bucket: ${{ secrets.AWS_S3_PRODUCTION_BUCKET }}"
+          echo "CloudFront: ${{ secrets.AWS_CLOUDFRONT_PRODUCTION_ID }}"
