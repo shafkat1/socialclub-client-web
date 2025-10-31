@@ -40,7 +40,6 @@ RUN npm ci --only=production --legacy-peer-deps && npm cache clean --force
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma 2>/dev/null || true
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
