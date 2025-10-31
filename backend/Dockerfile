@@ -3,21 +3,21 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy backend package files (from backend subdirectory)
-COPY backend/package*.json ./
+# Copy backend package files (already in context ./backend)
+COPY package*.json ./
 
 # Install dependencies
 RUN npm ci --legacy-peer-deps
 
 # Copy backend source code
-COPY backend/src ./src
+COPY src ./src
 
 # Copy backend configuration files
-COPY backend/tsconfig.json ./tsconfig.json
-COPY backend/nest-cli.json ./nest-cli.json
+COPY tsconfig.json ./tsconfig.json
+COPY nest-cli.json ./nest-cli.json
 
 # Copy Prisma schema for generation
-COPY backend/prisma ./prisma
+COPY prisma ./prisma
 
 # Generate Prisma Client
 RUN npx prisma generate
@@ -36,7 +36,7 @@ ENV NODE_ENV=production
 RUN apk add --no-cache dumb-init openssl
 
 # Copy backend package files
-COPY backend/package*.json ./
+COPY package*.json ./
 
 # Install only production dependencies
 RUN npm ci --only=production --legacy-peer-deps && npm cache clean --force
