@@ -83,21 +83,16 @@ jobs:
       - name: Output image URI
         id: image
         run: |
-          # Get AWS account ID and derive ECR registry URL
+          # Calculate ECR registry from AWS account
           AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          ECR_REGION="${{ env.AWS_REGION }}"
-          ECR_REGISTRY="${AWS_ACCOUNT_ID}.dkr.ecr.${ECR_REGION}.amazonaws.com"
-          
           if [ -z "$AWS_ACCOUNT_ID" ]; then
-            echo "ERROR: Could not determine AWS account ID!"
+            echo "ERROR: Could not determine AWS account ID"
             exit 1
           fi
           
-          IMAGE_URI="${ECR_REGISTRY}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}"
+          IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ github.sha }}"
           echo "uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
-          echo "Docker image built: ${IMAGE_URI}"
-          echo "AWS Account ID: ${AWS_ACCOUNT_ID}"
-          echo "ECR Registry: ${ECR_REGISTRY}"
+          echo "Image URI set to: ${IMAGE_URI}"
 
   deploy-infrastructure:
     name: Deploy Infrastructure with Terraform
@@ -311,12 +306,19 @@ jobs:
       - name: Update ECS task definition
         id: task-def
         run: |
-          echo "Image URI from build: ${{ needs.build-backend.outputs.image-uri }}"
+          echo "=== Debug Info ==="
+          echo "Build job outputs: ${{ toJson(needs.build-backend.outputs) }}"
+          echo "Image URI: '${{ needs.build-backend.outputs.image-uri }}'"
+          
           if [ -z "${{ needs.build-backend.outputs.image-uri }}" ]; then
-            echo "ERROR: Image URI is empty! Build may have failed."
+            echo "ERROR: Image URI is empty!"
+            echo "Available outputs:"
+            echo "${{ toJson(needs.build-backend.outputs) }}"
             exit 1
           fi
-        
+          
+          echo "Image URI validated: ${{ needs.build-backend.outputs.image-uri }}"
+
       - name: Update ECS task definition (render)
         id: task-def-render
         uses: aws-actions/amazon-ecs-render-task-definition@v1
