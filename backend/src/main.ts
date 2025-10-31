@@ -30,6 +30,9 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // ✅ SET GLOBAL PREFIX FOR ALL API ROUTES
+  app.setGlobalPrefix('api');
+
   // Sentry
   if (process.env.SENTRY_DSN) {
     Sentry.init({
