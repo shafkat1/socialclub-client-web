@@ -287,6 +287,15 @@ jobs:
 
       - name: Update ECS task definition
         id: task-def
+        run: |
+          echo "Image URI from build: ${{ needs.build-backend.outputs.image-uri }}"
+          if [ -z "${{ needs.build-backend.outputs.image-uri }}" ]; then
+            echo "ERROR: Image URI is empty! Build may have failed."
+            exit 1
+          fi
+        
+      - name: Update ECS task definition (render)
+        id: task-def-render
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: ./backend/task-definition.json
@@ -296,7 +305,7 @@ jobs:
       - name: Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          task-definition: ${{ steps.task-def-render.outputs.task-definition }}
           service: ${{ steps.env.outputs.service }}
           cluster: ${{ steps.env.outputs.cluster }}
           wait-for-service-stability: true
