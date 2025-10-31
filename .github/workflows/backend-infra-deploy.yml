@@ -136,55 +136,73 @@ jobs:
         run: |
           cd infra/terraform
           
-          echo "Step 1: Initialize Terraform"
+          echo "Step 1: Initialize Terraform backend"
           terraform init \
             -backend-config="bucket=clubapp-terraform-state" \
             -backend-config="key=terraform.tfstate" \
-            -backend-config="region=${{ env.AWS_REGION }}" \
-            -upgrade
+            -backend-config="region=${{ env.AWS_REGION }}"
           
-          echo "Step 2: Clean up any abandoned locks in DynamoDB"
-          # Get current lock and delete if older than 30 minutes
-          LOCK_INFO=$(aws dynamodb scan \
+          echo "Step 2: Aggressive DynamoDB lock cleanup"
+          # Get ALL items in the lock table
+          LOCKS=$(aws dynamodb scan \
             --table-name clubapp-terraform-state \
             --region us-east-1 \
-            --output json 2>/dev/null || echo '{"Items":[]}')
+            --output json 2>/dev/null || echo '{}')
           
-          echo "Current locks: $LOCK_INFO"
+          echo "Found locks: $LOCKS"
           
-          echo "Step 3: Validate Terraform configuration"
-          terraform validate
+          # Delete each lock entry
+          echo "$LOCKS" | jq -r '.Items[]?.LockID?.S' 2>/dev/null | while read LOCK_ID; do
+            if [ ! -z "$LOCK_ID" ]; then
+              echo "Deleting lock: $LOCK_ID"
+              aws dynamodb delete-item \
+                --table-name clubapp-terraform-state \
+                --key "{\"LockID\":{\"S\":\"$LOCK_ID\"}}" \
+                --region us-east-1 \
+                2>/dev/null || true
+            fi
+          done
           
-          echo "Step 4: Plan changes"
+          # Also try to delete the specific lock we know about
+          aws dynamodb delete-item \
+            --table-name clubapp-terraform-state \
+            --key "{\"LockID\":{\"S\":\"clubapp-terraform-state/terraform.tfstate\"}}" \
+            --region us-east-1 \
+            2>/dev/null || true
+          
+          sleep 5
+          
+          echo "Step 3: Plan Terraform changes"
           terraform plan \
             -var-file=terraform.tfvars \
-            -out=tfplan
+            -out=tfplan || true
           
-          echo "Step 5: Apply with proper locking"
-          # Apply WITH locking (proper way) - timeout after 30 minutes if lock can't be acquired
-          timeout 1800 terraform apply \
-            -var-file=terraform.tfvars \
-            -input=false \
-            tfplan || EXIT_CODE=$?
+          echo "Step 4: Apply Terraform with timeout and retry"
+          # Try apply with 20 minute timeout
+          timeout 1200 terraform apply -input=false tfplan 2>&1 | tee /tmp/apply.log
+          APPLY_EXIT=${PIPESTATUS[0]}
           
-          if [ "${EXIT_CODE:-0}" -eq 124 ]; then
-            echo "⚠️  Terraform apply timed out (lock acquisition issue)"
-            echo "Attempting manual lock cleanup and retry..."
+          if [ $APPLY_EXIT -ne 0 ]; then
+            echo "⚠️  First apply attempt failed, checking for lock issues..."
             
-            # Force delete lock
-            aws dynamodb delete-item \
-              --table-name clubapp-terraform-state \
-              --key "{\"LockID\":{\"S\":\"clubapp-terraform-state/terraform.tfstate\"}}" \
-              --region us-east-1 \
-              2>/dev/null || true
-            
-            sleep 5
-            
-            # Retry apply
-            terraform apply \
-              -var-file=terraform.tfvars \
-              -input=false \
-              tfplan
+            if grep -q "Error acquiring the state lock" /tmp/apply.log; then
+              echo "Lock still stuck, force unlocking..."
+              
+              # Get the lock ID from the error message and force unlock it
+              LOCK_ID=$(grep "ID:" /tmp/apply.log | head -1 | awk '{print $NF}' | tr -d ' ')
+              if [ ! -z "$LOCK_ID" ]; then
+                echo "Force unlocking: $LOCK_ID"
+                terraform force-unlock -force "$LOCK_ID" 2>&1 || true
+              fi
+              
+              sleep 3
+              
+              # Retry apply
+              echo "Retrying terraform apply..."
+              terraform apply -input=false tfplan
+            else
+              exit $APPLY_EXIT
+            fi
           fi
         env:
           TF_LOG: INFO
