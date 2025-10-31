@@ -76,3 +76,4 @@ bootstrap().catch((error) => {
 // Docker simplify
 // Build fix v2
 // Prod stage fix
+// ECS deploy fix
