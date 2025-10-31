@@ -3,10 +3,8 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files only
 COPY package*.json ./
-COPY tsconfig.json ./
-COPY nest-cli.json ./
 
 # Install dependencies
 RUN npm ci --legacy-peer-deps
@@ -14,9 +12,8 @@ RUN npm ci --legacy-peer-deps
 # Copy source code
 COPY src ./src
 
-# Copy prisma schema (if it exists - it will be in src or root)
-# Note: Prisma client will be generated in node_modules/.prisma
-RUN test -d prisma && cp -r prisma . || echo "No prisma folder, will generate client"
+# Copy prisma schema (if it exists)
+RUN test -d prisma && cp -r prisma . || echo "No prisma schema"
 
 # Generate Prisma client
 RUN npx prisma generate 2>/dev/null || echo "Prisma generation skipped"
