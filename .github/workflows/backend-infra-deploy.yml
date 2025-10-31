@@ -72,7 +72,10 @@ jobs:
 
       - name: Output image URI
         id: image
-        run: echo "uri=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+        run: |
+          IMAGE_URI="${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}"
+          echo "uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
+          echo "Docker image built: ${IMAGE_URI}"
 
   deploy-infrastructure:
     name: Deploy Infrastructure with Terraform
@@ -164,7 +167,7 @@ jobs:
 
   deploy-backend:
     name: Deploy Backend to ECS
-    needs: build-backend
+    needs: [build-backend, deploy-infrastructure]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     permissions:
