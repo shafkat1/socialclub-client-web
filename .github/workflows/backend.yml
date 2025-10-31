@@ -295,7 +295,7 @@ jobs:
 
       - name: Slack notification
         uses: 8398a7/action-slack@v3
-        if: always()
+        if: always() && secrets.SLACK_WEBHOOK != ''
         with:
           status: ${{ job.status }}
           text: 'Backend staging deployment ${{ job.status }}'
@@ -319,10 +319,11 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Get current task definition
+        continue-on-error: true
         run: |
           aws ecs describe-task-definition \
             --task-definition socialclub-backend-production \
-            --query 'taskDefinition' > task-definition.json
+            --query 'taskDefinition' > task-definition.json || echo "{}" > task-definition.json
 
       - name: Update ECS task definition image
         id: task-def
@@ -375,7 +376,7 @@ jobs:
 
       - name: Slack notification
         uses: 8398a7/action-slack@v3
-        if: always()
+        if: always() && secrets.SLACK_WEBHOOK != ''
         with:
           status: ${{ job.status }}
           text: 'Backend production deployment ${{ job.status }}'
