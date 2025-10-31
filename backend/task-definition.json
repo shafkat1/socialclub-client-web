@@ -7,7 +7,7 @@
   "containerDefinitions": [
     {
       "name": "clubapp-backend",
-      "image": "425687053209.dkr.ecr.us-east-1.amazonaws.com/clubapp-backend:latest",
+      "image": "425687053209.dkr.ecr.us-east-1.amazonaws.com/clubapp-backend:3a908550f3af60fa13804547daaba2f8effe1abe",
       "portMappings": [
         {
           "containerPort": 3001,
