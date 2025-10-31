@@ -2,6 +2,10 @@ resource "aws_ecs_cluster" "main" {
   name = "${local.name_prefix}-ecs"
 }
 
+resource "aws_ecs_cluster" "prod" {
+  name = "clubapp-prod"
+}
+
 resource "aws_lb" "app" {
   name               = "${local.name_prefix}-alb"
   internal           = false
@@ -71,4 +75,58 @@ resource "aws_ecs_service" "placeholder" {
   }
 
   depends_on = [aws_lb_target_group.app]
+}
+
+# Minimal production cluster/service to satisfy deployments (kept at zero tasks to minimise cost)
+resource "aws_ecs_task_definition" "prod_placeholder" {
+  family                   = "clubapp-backend-prod"
+  cpu                      = "256"
+  memory                   = "512"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  execution_role_arn       = "arn:aws:iam::425687053209:role/ecsTaskExecutionRole"
+  task_role_arn            = "arn:aws:iam::425687053209:role/ecsTaskRole"
+
+  container_definitions = jsonencode([
+    {
+      name      = "clubapp-backend"
+      image     = "public.ecr.aws/docker/library/nginx:stable"
+      essential = true
+      portMappings = [{
+        containerPort = 3001
+        hostPort      = 3001
+        protocol      = "tcp"
+      }]
+      command = [
+        "/bin/sh",
+        "-c",
+        "printf 'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nhealthy' > /usr/share/nginx/html/health && nginx -g 'daemon off;' "
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = "/ecs/clubapp-backend"
+          "awslogs-region"        = "us-east-1"
+          "awslogs-stream-prefix" = "ecs"
+        }
+      }
+    }
+  ])
+}
+
+resource "aws_ecs_service" "prod_placeholder" {
+  name            = "clubapp-backend-prod"
+  cluster         = aws_ecs_cluster.prod.id
+  task_definition = aws_ecs_task_definition.prod_placeholder.arn
+  desired_count   = 0
+  launch_type     = "FARGATE"
+
+  deployment_maximum_percent         = 200
+  deployment_minimum_healthy_percent = 100
+
+  network_configuration {
+    subnets         = [for s in aws_subnet.private : s.id]
+    security_groups = [aws_security_group.services.id]
+    assign_public_ip = false
+  }
 }
