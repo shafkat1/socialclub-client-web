@@ -10,6 +10,7 @@ on:
       - 'infra/**'
       - 'package.json'
       - '.github/workflows/backend-infra-deploy.yml'
+      - 'README.md'
   workflow_dispatch:
 
 env:
