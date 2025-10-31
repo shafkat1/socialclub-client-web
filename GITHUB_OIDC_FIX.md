@@ -68,3 +68,4 @@ This is already configured in GitHub secret `AWS_ROLE_ARN`.
 
 **Status**: 🚀 **IN PROGRESS - Terraform Applying**  
 **Next Check**: ~10 minutes
+# GitHub OIDC role successfully created
