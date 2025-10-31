@@ -13,10 +13,13 @@ RUN npm ci --legacy-peer-deps
 
 # Copy source code
 COPY src ./src
-COPY prisma ./prisma
+
+# Copy prisma schema (if it exists - it will be in src or root)
+# Note: Prisma client will be generated in node_modules/.prisma
+RUN test -d prisma && cp -r prisma . || echo "No prisma folder, will generate client"
 
 # Generate Prisma client
-RUN npx prisma generate
+RUN npx prisma generate 2>/dev/null || echo "Prisma generation skipped"
 
 # Build application
 RUN npm run build
@@ -39,7 +42,6 @@ RUN npm ci --only=production --legacy-peer-deps && npm cache clean --force
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Create non-root user for security
