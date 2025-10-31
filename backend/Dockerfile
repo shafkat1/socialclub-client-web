@@ -3,16 +3,19 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy ONLY package files (guaranteed to exist)
-COPY package*.json ./
+# Copy backend package files (from backend subdirectory)
+COPY backend/package*.json ./
 
 # Install dependencies
 RUN npm ci --legacy-peer-deps
 
-# Copy source code
-COPY src ./src
+# Copy backend source code
+COPY backend/src ./src
 
-# Build application (NestJS will work even without tsconfig if src is present)
+# Copy backend configuration files
+COPY backend/tsconfig.json backend/nest-cli.json ./
+
+# Build application
 RUN npm run build
 
 # Production stage
@@ -25,8 +28,8 @@ ENV NODE_ENV=production
 # Install dumb-init and OpenSSL for Prisma
 RUN apk add --no-cache dumb-init openssl
 
-# Copy package files
-COPY package*.json ./
+# Copy backend package files
+COPY backend/package*.json ./
 
 # Install only production dependencies
 RUN npm ci --only=production --legacy-peer-deps && npm cache clean --force
