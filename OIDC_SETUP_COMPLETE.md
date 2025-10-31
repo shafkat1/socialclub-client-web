@@ -208,3 +208,4 @@ Role ARN Ready        ✅ DONE
 **Next Action**: Go to GitHub and add the `AWS_ROLE_ARN` secret  
 **Time to Complete**: ~5 minutes (GitHub secret) + ~25-30 minutes (deployment)  
 **Total Time to Live**: ~30-35 minutes
+# GitHub OIDC Secret Added - Rerunning Pipelines
