@@ -1,0 +1,288 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+// ============================================
+// USERS & AUTHENTICATION
+// ============================================
+model User {
+  id                    String     @id @default(cuid())
+  phone                 String?    @unique
+  email                 String?    @unique
+  displayName           String?
+  profileImage          String?
+  bio                   String?
+  
+  // OAuth
+  googleId              String?    @unique
+  facebookId            String?    @unique
+  instagramId           String?    @unique
+  appleId               String?    @unique
+  tiktokId              String?    @unique
+  snapchatId            String?    @unique
+  twitterId             String?    @unique
+  
+  // Phone OTP
+  phoneVerified         Boolean    @default(false)
+  emailVerified         Boolean    @default(false)
+  
+  // Relationships
+  groupMembers          GroupMember[]
+  sentDrinkOrders       Order[]    @relation("buyer")
+  receivedOrders        Order[]    @relation("recipient")
+  redemptions           Redemption[]
+  presence              Presence?
+  devices               Device[]
+  
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  deletedAt             DateTime?
+  
+  @@index([phone])
+  @@index([email])
+  @@index([createdAt])
+}
+
+// ============================================
+// GROUPS & FRIENDS
+// ============================================
+model Group {
+  id                    String     @id @default(cuid())
+  name                  String?
+  
+  // Members
+  members               GroupMember[]
+  
+  // Current venue
+  venueId               String?
+  venue                 Venue?     @relation(fields: [venueId], references: [id])
+  
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  
+  @@index([venueId])
+}
+
+model GroupMember {
+  id                    String     @id @default(cuid())
+  groupId               String
+  group                 Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  
+  userId                String
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  isOwner               Boolean    @default(false)
+  joinedAt              DateTime   @default(now())
+  
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+}
+
+// ============================================
+// VENUES (BARS, CLUBS, PUBS)
+// ============================================
+model Venue {
+  id                    String     @id @default(cuid())
+  name                  String
+  description           String?
+  
+  // Location
+  latitude              Float
+  longitude             Float
+  address               String?
+  city                  String?
+  
+  // Media
+  coverImage            String?
+  
+  // Relationships
+  orders                Order[]
+  presence              Presence[]
+  groups                Group[]
+  
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  
+  @@index([latitude, longitude])
+}
+
+// ============================================
+// DRINKS & ORDERS
+// ============================================
+model Order {
+  id                    String     @id @default(cuid())
+  
+  // Buyer & Recipient
+  buyerId               String
+  buyer                 User       @relation("buyer", fields: [buyerId], references: [id])
+  
+  recipientId           String
+  recipient             User       @relation("recipient", fields: [recipientId], references: [id])
+  
+  // Venue
+  venueId               String
+  venue                 Venue      @relation(fields: [venueId], references: [id])
+  
+  // Payment & Status
+  amount                Int        // in cents
+  currency              String     @default("USD")
+  status                OrderStatus @default(PENDING)
+  paymentMethod         PaymentMethod @default(STRIPE)
+  stripePaymentIntentId String?
+  
+  // Redemption
+  redemptionId          String?
+  redemption            Redemption? @relation(fields: [redemptionId], references: [id])
+  
+  // Message
+  message               String?
+  
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  expiresAt             DateTime   @default(dbgenerated("now() + interval '24 hours'"))
+  
+  @@index([buyerId])
+  @@index([recipientId])
+  @@index([venueId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  ACCEPTED
+  REJECTED
+  REDEEMED
+  EXPIRED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  STRIPE
+  APPLE_PAY
+  GOOGLE_PAY
+}
+
+// ============================================
+// REDEMPTIONS (BARTENDER VERIFICATION)
+// ============================================
+model Redemption {
+  id                    String     @id @default(cuid())
+  
+  // Order reference
+  orders                Order[]
+  
+  // Bartender verification
+  bartenderId           String
+  bartender             User       @relation(fields: [bartenderId], references: [id])
+  
+  // QR code
+  qrCode                String     @unique
+  
+  // Status
+  status                RedemptionStatus @default(PENDING)
+  redeemedAt            DateTime?
+  
+  createdAt             DateTime   @default(now())
+  updatedAt             DateTime   @updatedAt
+  
+  @@index([bartenderId])
+  @@index([qrCode])
+  @@index([status])
+}
+
+enum RedemptionStatus {
+  PENDING
+  SCANNED
+  REDEEMED
+  CANCELLED
+}
+
+// ============================================
+// PRESENCE TRACKING (Real-time)
+// ============================================
+model Presence {
+  id                    String     @id @default(cuid())
+  
+  userId                String     @unique
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  venueId               String
+  venue                 Venue      @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  
+  // Drink interest flags
+  wantsToBuy            Boolean    @default(false)
+  wantsToReceive        Boolean    @default(false)
+  
+  // Location
+  latitude              Float?
+  longitude             Float?
+  
+  // Expiry (TTL for Redis)
+  expiresAt             DateTime   @default(dbgenerated("now() + interval '24 hours'"))
+  
+  lastSeen              DateTime   @default(now()) @updatedAt
+  
+  @@unique([userId, venueId])
+  @@index([venueId])
+  @@index([lastSeen])
+}
+
+// ============================================
+// DEVICES (PUSH NOTIFICATIONS)
+// ============================================
+model Device {
+  id                    String     @id @default(cuid())
+  
+  userId                String
+  user                  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Device info
+  deviceToken           String
+  platform              String     // ios, android, web
+  appVersion            String?
+  osVersion             String?
+  
+  // Push notification status
+  pushEnabled           Boolean    @default(true)
+  
+  lastUsedAt            DateTime   @default(now()) @updatedAt
+  
+  createdAt             DateTime   @default(now())
+  
+  @@unique([userId, deviceToken])
+  @@index([userId])
+}
+
+// ============================================
+// AUDIT & LOGGING
+// ============================================
+model AuditLog {
+  id                    String     @id @default(cuid())
+  
+  userId                String?
+  action                String
+  resource              String
+  resourceId            String?
+  changes               Json?
+  
+  ipAddress             String?
+  userAgent             String?
+  
+  createdAt             DateTime   @default(now())
+  
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}

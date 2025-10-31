@@ -1,0 +1,9 @@
+output "vpc_id" { value = aws_vpc.main.id }
+output "public_subnet_ids" { value = [for s in aws_subnet.public : s.id] }
+output "private_subnet_ids" { value = [for s in aws_subnet.private : s.id] }
+output "alb_dns_name" { value = aws_lb.app.dns_name }
+output "rds_endpoint" { value = aws_db_instance.postgres.address }
+output "redis_primary_endpoint" { value = aws_elasticache_replication_group.redis.primary_endpoint_address }
+output "s3_assets_bucket" { value = aws_s3_bucket.assets.bucket }
+output "cloudfront_assets_domain" { value = aws_cloudfront_distribution.assets.domain_name }
+output "cloudfront_distribution_id" { value = aws_cloudfront_distribution.assets.id }

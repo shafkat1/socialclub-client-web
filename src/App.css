@@ -1,0 +1,17 @@
+/* App Styles */
+@layer base {
+  :root {
+    color-scheme: light dark;
+  }
+}
+
+/* Responsive utilities */
+@layer utilities {
+  .prose {
+    @apply text-base leading-relaxed;
+  }
+
+  .prose-sm {
+    @apply text-sm;
+  }
+}

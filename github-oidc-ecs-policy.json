@@ -1,0 +1,30 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecs:RegisterTaskDefinition",
+        "ecs:UpdateService",
+        "ecs:DescribeTaskDefinition",
+        "ecs:DescribeServices",
+        "iam:PassRole"
+      ],
+      "Resource": [
+        "arn:aws:ecs:us-east-1:425687053209:task-definition/clubapp-backend-task:*",
+        "arn:aws:ecs:us-east-1:425687053209:service/clubapp-dev-cluster/clubapp-backend-service",
+        "arn:aws:iam::425687053209:role/ecsTaskExecutionRole",
+        "arn:aws:iam::425687053209:role/ecsTaskRole"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ecr:GetAuthorizationToken",
+        "ecr:BatchGetImage",
+        "ecr:GetDownloadUrlForLayer"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

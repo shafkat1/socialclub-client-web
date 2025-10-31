@@ -1,0 +1,82 @@
+# ============================================
+# TERRAFORM VARIABLES
+# ============================================
+# Copy this file to terraform.tfvars and fill in your values
+# Or pass as -var flags when running terraform
+
+# ============================================
+# PROJECT & ENVIRONMENT
+# ============================================
+project       = "clubapp"
+environment   = "dev"
+aws_region    = "us-east-1"
+az_count      = 2
+
+# ============================================
+# NETWORKING
+# ============================================
+vpc_cidr = "10.0.0.0/16"
+
+# ============================================
+# DOMAIN & DNS
+# ============================================
+domain_name   = "desh.co"
+
+# Set to false initially (before domain transfer)
+# Set to true after domain is transferred to AWS Route 53
+enable_domain = false
+
+# ============================================
+# DATABASE (RDS PostgreSQL)
+# ============================================
+# Database configuration (optional overrides)
+# db_instance_class  = "db.t4g.medium"
+# db_allocated_storage = 100
+# db_max_allocated_storage = 512
+
+# ============================================
+# CACHE (ElastiCache Redis)
+# ============================================
+# Redis configuration (optional overrides)
+# redis_node_type     = "cache.t4g.small"
+# redis_num_clusters  = 2
+
+# ============================================
+# STORAGE (S3)
+# ============================================
+# S3 bucket names (optional overrides - normally auto-generated)
+# s3_assets_bucket   = "clubapp-dev-assets"
+# s3_receipts_bucket = "clubapp-dev-receipts"
+# s3_logs_bucket     = "clubapp-dev-logs"
+
+# ============================================
+# COMPUTE (ECS)
+# ============================================
+# ECS configuration (optional overrides)
+# ecs_task_cpu      = "256"
+# ecs_task_memory   = "512"
+# ecs_desired_count = 1
+
+# ============================================
+# LOAD BALANCER (ALB)
+# ============================================
+# ALB configuration (optional overrides)
+# alb_internal           = false
+# alb_enable_logging     = true
+# alb_deletion_protection = false
+
+# ============================================
+# SECURITY
+# ============================================
+# Enable additional security features
+# enable_waf = false
+# enable_network_acl_restrictions = false
+
+# ============================================
+# TAGS (optional additional tags)
+# ============================================
+# additional_tags = {
+#   Team       = "backend"
+#   CostCenter = "engineering"
+#   Owner      = "your-email@example.com"
+# }
