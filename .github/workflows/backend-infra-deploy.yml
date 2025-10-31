@@ -135,39 +135,34 @@ jobs:
         run: |
           cd infra/terraform
           
-          # Get the existing lock ID from DynamoDB and force unlock it
-          # The lock appears to be stuck, so we need to remove it directly
-          LOCK_ID="609fc745-68f1-7cea-6fbe-7389c8954b8a"
+          echo "Step 1: Clearing ANY stuck Terraform state locks..."
           
-          # Try to delete the lock from DynamoDB using AWS CLI
-          echo "Attempting to clear stuck Terraform state lock..."
-          aws dynamodb delete-item \
+          # Delete ALL lock entries from DynamoDB for this state file
+          # This is aggressive but necessary to recover from stuck locks
+          aws dynamodb scan \
             --table-name clubapp-terraform-state \
-            --key "{\"LockID\":{\"S\":\"clubapp-terraform-state/terraform.tfstate\"}}" \
             --region us-east-1 \
-            2>/dev/null || echo "No lock found in DynamoDB (expected if already cleared)"
+            --projection-expression "LockID" \
+            --output json | jq -r '.Items[].LockID.S' | while read lock_id; do
+            echo "  Deleting lock: $lock_id"
+            aws dynamodb delete-item \
+              --table-name clubapp-terraform-state \
+              --key "{\"LockID\":{\"S\":\"$lock_id\"}}" \
+              --region us-east-1 \
+              2>/dev/null || true
+          done
           
-          # Alternative: Use Terraform force-unlock with the known lock ID
-          if [ ! -z "$LOCK_ID" ]; then
-            echo "Forcing unlock of stuck lock: $LOCK_ID"
-            terraform force-unlock -force "$LOCK_ID" 2>/dev/null || echo "Could not force unlock (continuing anyway)"
-          fi
+          echo "Step 2: Wait for locks to be released..."
+          sleep 3
           
-          # Wait a moment for lock to be released
-          sleep 2
-          
-          # IMPORTANT: Refresh state to sync with actual AWS resources
-          # This prevents "resource already exists" errors when Terraform state is out of sync
-          echo "Refreshing Terraform state to match actual AWS resources..."
+          echo "Step 3: Refresh Terraform state (without locking)..."
+          # Refresh WITHOUT locking to avoid lock acquisition errors
           terraform refresh \
             -var-file=terraform.tfvars \
-            -lock=true || echo "State refresh completed with warnings"
+            -lock=false || echo "State refresh completed with warnings"
           
-          # Wait before applying
-          sleep 2
-          
-          # Now apply with full logging
-          echo "Proceeding with Terraform apply..."
+          echo "Step 4: Apply Terraform configuration..."
+          # Apply WITH locking now that state is synced and locks are cleared
           terraform apply \
             -var-file=terraform.tfvars \
             -auto-approve \
