@@ -12,6 +12,7 @@ on:
       - 'backend/Dockerfile'
       - 'backend/prisma/**'
       - '.github/workflows/backend.yml'
+      - 'README.md'
   pull_request:
     branches: [ main, develop ]
     paths:

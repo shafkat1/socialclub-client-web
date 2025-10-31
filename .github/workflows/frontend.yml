@@ -10,6 +10,7 @@ on:
       - 'vite.config.ts'
       - 'tsconfig.json'
       - '.github/workflows/frontend.yml'
+      - 'README.md'
   pull_request:
     branches: [ main, develop ]
     paths:
