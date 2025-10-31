@@ -41,11 +41,12 @@ COPY backend/package*.json ./
 # Install only production dependencies
 RUN npm ci --only=production --legacy-peer-deps && npm cache clean --force
 
-# Copy Prisma schema from backend directory
+# Copy Prisma schema from backend directory for runtime migrations
 COPY backend/prisma ./prisma
 
-# Generate Prisma Client for production
-RUN npx prisma generate
+# Copy generated Prisma Client from builder stage
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
