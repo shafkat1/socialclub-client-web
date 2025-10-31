@@ -7,3 +7,4 @@
 # Workflow retrigger at 10/31/2025 09:51:41
 # Simplified Terraform apply
 # Proper Terraform locking
+# Frontend deployment ready
