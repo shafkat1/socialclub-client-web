@@ -100,7 +100,6 @@ jobs:
         run: |
           # Calculate ECR registry from AWS account
           AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          echo "AWS_ACCOUNT_ID=$AWS_ACCOUNT_ID"
           
           if [ -z "$AWS_ACCOUNT_ID" ]; then
             echo "ERROR: Could not determine AWS account ID"
@@ -110,12 +109,21 @@ jobs:
           fi
           
           echo "IMAGE_URI=$IMAGE_URI"
-          echo "uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
           
-          # Verify it was written
-          echo "=== GITHUB_OUTPUT contents ==="
-          cat $GITHUB_OUTPUT
-          echo "=== END GITHUB_OUTPUT ==="
+          # Use a safe output method - write to file
+          mkdir -p /tmp/outputs
+          echo "$IMAGE_URI" > /tmp/outputs/image-uri.txt
+          
+          # Also try to set the output (may be masked but that's OK)
+          echo "uri=${IMAGE_URI}" >> $GITHUB_OUTPUT 2>/dev/null || true
+          
+      - name: Upload image URI artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: image-uri
+          path: /tmp/outputs/image-uri.txt
+          retention-days: 1
 
   deploy-infrastructure:
     name: Deploy Infrastructure with Terraform
@@ -329,18 +337,20 @@ jobs:
       - name: Update ECS task definition
         id: task-def
         run: |
-          echo "=== Debug Info ==="
-          echo "Build job outputs: ${{ toJson(needs.build-backend.outputs) }}"
-          echo "Image URI: '${{ needs.build-backend.outputs.image-uri }}'"
+          # Calculate AWS account ID dynamically
+          AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           
-          if [ -z "${{ needs.build-backend.outputs.image-uri }}" ]; then
-            echo "ERROR: Image URI is empty!"
-            echo "Available outputs:"
-            echo "${{ toJson(needs.build-backend.outputs) }}"
+          # Calculate image URI - same way as build job does
+          IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ github.sha }}"
+          
+          echo "Image URI: $IMAGE_URI"
+          
+          if [ -z "$IMAGE_URI" ] || [ -z "$AWS_ACCOUNT_ID" ]; then
+            echo "ERROR: Could not determine Image URI or AWS Account ID!"
             exit 1
           fi
           
-          echo "Image URI validated: ${{ needs.build-backend.outputs.image-uri }}"
+          echo "image-uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
 
       - name: Update ECS task definition (render)
         id: task-def-render
@@ -348,7 +358,7 @@ jobs:
         with:
           task-definition: ./backend/task-definition.json
           container-name: ${{ env.ECR_REPOSITORY }}
-          image: ${{ needs.build-backend.outputs.image-uri }}
+          image: ${{ steps.task-def.outputs.image-uri }}
 
       - name: Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
