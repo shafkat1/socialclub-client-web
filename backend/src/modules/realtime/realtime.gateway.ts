@@ -25,11 +25,11 @@ export class RealtimeGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
   constructor(private jwtService: JwtService) {}
 
-  afterInit(_server: Server) {
+  afterInit() {
     this.logger.log('WebSocket gateway initialized');
   }
 
-  handleConnection(client: Socket, ..._args: any[]) {
+  handleConnection(client: Socket) {
     try {
       const token = client.handshake.auth.token;
       if (!token) {
