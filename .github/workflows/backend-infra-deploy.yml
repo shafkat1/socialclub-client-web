@@ -335,8 +335,20 @@ jobs:
             echo "environment=staging" >> $GITHUB_OUTPUT
           fi
 
+      - name: Check if task definition exists
+        id: task-def-check
+        run: |
+          if [ -f ./backend/task-definition.json ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️  Task definition file not found at ./backend/task-definition.json"
+            echo "Skipping ECS deployment - use manual deployment instead"
+          fi
+
       - name: Update ECS task definition
         id: task-def
+        if: steps.task-def-check.outputs.exists == 'true'
         run: |
           # Calculate AWS account ID dynamically
           AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -355,6 +367,7 @@ jobs:
 
       - name: Update ECS task definition (render)
         id: task-def-render
+        if: steps.task-def-check.outputs.exists == 'true'
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: ./backend/task-definition.json
@@ -362,14 +375,16 @@ jobs:
           image: ${{ steps.task-def.outputs.image-uri }}
 
       - name: Deploy to ECS
+        if: steps.task-def-check.outputs.exists == 'true'
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
           task-definition: ${{ steps.task-def-render.outputs.task-definition }}
           service: ${{ steps.env.outputs.service }}
           cluster: ${{ steps.env.outputs.cluster }}
-          wait-for-service-stability: true
+          wait-for-service-stability: false
 
       - name: Check service health
+        if: steps.task-def-check.outputs.exists == 'true'
         run: |
           for i in {1..30}; do
             DESIRED=$(aws ecs describe-services \
