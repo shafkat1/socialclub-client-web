@@ -295,7 +295,7 @@ jobs:
 
       - name: Slack notification
         uses: 8398a7/action-slack@v3
-        if: always() && secrets.SLACK_WEBHOOK != ''
+        if: false
         with:
           status: ${{ job.status }}
           text: 'Backend staging deployment ${{ job.status }}'
@@ -376,7 +376,7 @@ jobs:
 
       - name: Slack notification
         uses: 8398a7/action-slack@v3
-        if: always() && secrets.SLACK_WEBHOOK != ''
+        if: false
         with:
           status: ${{ job.status }}
           text: 'Backend production deployment ${{ job.status }}'
