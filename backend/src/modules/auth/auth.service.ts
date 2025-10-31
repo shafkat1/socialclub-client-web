@@ -4,6 +4,7 @@ import { PrismaService } from '../../common/services/prisma.service';
 import { RedisService } from '../../common/services/redis.service';
 import { SendOtpDto, VerifyOtpDto, SocialLoginDto, TokenResponseDto, UserProfileDto } from '../../common/dtos/auth.dto';
 import * as twilio from 'twilio';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -21,6 +22,60 @@ export class AuthService {
         process.env.TWILIO_AUTH_TOKEN,
       );
     }
+  }
+
+  // ============================================
+  // EMAIL/PASSWORD AUTHENTICATION
+  // ============================================
+  async signup(dto: { email: string; password: string; name?: string; dateOfBirth?: string }): Promise<TokenResponseDto> {
+    // Check if user already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException('User with this email already exists');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    // Create new user
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        password: hashedPassword,
+        displayName: dto.name || dto.email.split('@')[0],
+        emailVerified: true, // Auto-verify email for now
+        phoneVerified: false,
+      },
+    });
+
+    console.log('✅ User signup: ', user.id);
+
+    return this.generateTokens(user);
+  }
+
+  async signin(dto: { email: string; password: string }): Promise<TokenResponseDto> {
+    // Find user by email
+    const user = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+
+    if (!user || !user.password) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(dto.password, user.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+
+    console.log('✅ User signin: ', user.id);
+
+    return this.generateTokens(user);
   }
 
   // ============================================

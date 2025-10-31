@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Separator } from "./ui/separator";
 import { Phone, Mail, Calendar } from "lucide-react";
-import { projectId, publicAnonKey } from "../utils/supabase/info";
+import { config } from "../utils/config";
 
 interface AuthScreenProps {
   onAuthSuccess: (session: any) => void;
@@ -80,12 +80,11 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-8a406620/auth/signup`,
+        `${config.api.baseUrl}/auth/signup`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${publicAnonKey}`,
           },
           body: JSON.stringify(signupData),
         }
@@ -112,12 +111,11 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
         console.log("No session from signup, attempting manual sign in...");
         // If no session, try to sign in
         const signinResponse = await fetch(
-          `https://${projectId}.supabase.co/functions/v1/make-server-8a406620/auth/signin`,
+          `${config.api.baseUrl}/auth/signin`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${publicAnonKey}`,
             },
             body: JSON.stringify({
               email: signupData.email,
@@ -155,12 +153,11 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-8a406620/auth/signin`,
+        `${config.api.baseUrl}/auth/signin`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${publicAnonKey}`,
           },
           body: JSON.stringify(signinData),
         }
@@ -169,25 +166,14 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("Sign in error:", data.error, response.status);
-        
-        // Provide helpful error messages
-        let errorMsg = data.error || "Sign in failed";
-        if (errorMsg.includes("Invalid login credentials")) {
-          errorMsg = "❌ Invalid email or password.\n\nTips:\n• Check that you're using the correct email\n• Passwords are case-sensitive\n• If you just created an account, wait 5 seconds and try again\n• Try clicking 'Cleanup' then 'Create Test User' for fresh credentials";
-        }
-        throw new Error(errorMsg);
+        console.error("Signin error:", data.error);
+        throw new Error(data.error || "Sign in failed");
       }
 
-      if (!data.session) {
-        console.error("No session returned from sign in");
-        throw new Error("Sign in failed: No session returned");
-      }
-
-      console.log("Sign in successful");
+      console.log("Signin successful");
       onAuthSuccess(data.session);
     } catch (err: any) {
-      console.error("Sign in exception:", err);
+      console.error("Signin exception:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -201,14 +187,15 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-8a406620/auth/send-otp`,
+        `${config.api.baseUrl}/auth/send-otp`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${publicAnonKey}`,
           },
-          body: JSON.stringify({ phone: otpData.phone }),
+          body: JSON.stringify({
+            email: otpData.email,
+          }),
         }
       );
 
@@ -219,7 +206,9 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       }
 
       setOtpSent(true);
+      setSuccessMessage("OTP sent to your email");
     } catch (err: any) {
+      console.error("Send OTP exception:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -233,42 +222,43 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
 
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-8a406620/auth/verify-otp`,
+        `${config.api.baseUrl}/auth/verify-otp`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${publicAnonKey}`,
           },
-          body: JSON.stringify({ phone: otpData.phone, token: otpData.otp }),
+          body: JSON.stringify(otpData),
         }
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Invalid OTP");
+        throw new Error(data.error || "OTP verification failed");
       }
 
+      console.log("OTP verification successful");
       onAuthSuccess(data.session);
     } catch (err: any) {
+      console.error("Verify OTP exception:", err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSocialSignIn = async (provider: string) => {
-    setError(`${provider} sign-in is available. Please configure it in your Supabase dashboard at https://supabase.com/docs/guides/auth/social-login`);
+  const handleSocialLogin = (provider: string) => {
+    setError(`${provider} sign-in is available. Please configure it in your backend at /api/auth/social/${provider.toLowerCase()}`);
   };
 
   const checkAuthDebug = async () => {
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-8a406620/auth/debug`,
+        `${config.api.baseUrl}/auth/debug`,
         {
           headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
+            // No Authorization header as it's not a protected endpoint
           },
         }
       );
@@ -287,11 +277,11 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
     
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-8a406620/auth/create-test-user`,
+        `${config.api.baseUrl}/auth/create-test-user`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
+            // No Authorization header as it's not a protected endpoint
           },
         }
       );
@@ -336,11 +326,11 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
     
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-8a406620/auth/cleanup-test-users`,
+        `${config.api.baseUrl}/auth/cleanup-test-users`,
         {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${publicAnonKey}`,
+            // No Authorization header as it's not a protected endpoint
           },
         }
       );
@@ -372,12 +362,11 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
     
     try {
       const response = await fetch(
-        `https://${projectId}.supabase.co/functions/v1/make-server-8a406620/auth/test-signin`,
+        `${config.api.baseUrl}/auth/test-signin`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${publicAnonKey}`,
           },
           body: JSON.stringify(signinData),
         }
@@ -606,28 +595,28 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
             <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="outline"
-                onClick={() => handleSocialSignIn("Google")}
+                onClick={() => handleSocialLogin("Google")}
                 type="button"
               >
                 Google
               </Button>
               <Button
                 variant="outline"
-                onClick={() => handleSocialSignIn("Facebook")}
+                onClick={() => handleSocialLogin("Facebook")}
                 type="button"
               >
                 Facebook
               </Button>
               <Button
                 variant="outline"
-                onClick={() => handleSocialSignIn("Apple")}
+                onClick={() => handleSocialLogin("Apple")}
                 type="button"
               >
                 Apple
               </Button>
               <Button
                 variant="outline"
-                onClick={() => handleSocialSignIn("Instagram")}
+                onClick={() => handleSocialLogin("Instagram")}
                 type="button"
               >
                 Instagram

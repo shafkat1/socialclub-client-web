@@ -10,6 +10,21 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   // ============================================
+  // EMAIL/PASSWORD AUTHENTICATION
+  // ============================================
+  @Post('signup')
+  @HttpCode(201)
+  async signup(@Body() dto: { email: string; password: string; name?: string; dateOfBirth?: string }): Promise<TokenResponseDto> {
+    return this.authService.signup(dto);
+  }
+
+  @Post('signin')
+  @HttpCode(200)
+  async signin(@Body() dto: { email: string; password: string }): Promise<TokenResponseDto> {
+    return this.authService.signin(dto);
+  }
+
+  // ============================================
   // PHONE OTP
   // ============================================
   @Post('phone/send-otp')

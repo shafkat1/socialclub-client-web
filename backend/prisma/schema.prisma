@@ -18,6 +18,7 @@ model User {
   id                    String     @id @default(cuid())
   phone                 String?    @unique
   email                 String?    @unique
+  password              String?    // For email/password authentication
   displayName           String?
   profileImage          String?
   bio                   String?

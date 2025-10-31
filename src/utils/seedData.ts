@@ -1,5 +1,4 @@
-import { api } from "./api";
-import { projectId, publicAnonKey } from "./supabase/info";
+import { config } from "./config";
 
 // Seed venue data
 export async function seedVenues() {
@@ -66,15 +65,14 @@ export async function seedVenues() {
     },
   ];
 
-  const API_BASE = `https://${projectId}.supabase.co/functions/v1/make-server-8a406620`;
+  const API_BASE = config.api.baseUrl;
 
   for (const venue of venues) {
     try {
-      await fetch(`${API_BASE}/seed-venue`, {
+      await fetch(`${API_BASE}/venues`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${publicAnonKey}`,
         },
         body: JSON.stringify(venue),
       });
