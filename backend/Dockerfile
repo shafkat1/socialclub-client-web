@@ -13,7 +13,14 @@ RUN npm ci --legacy-peer-deps
 COPY backend/src ./src
 
 # Copy backend configuration files
-COPY backend/tsconfig.json backend/nest-cli.json ./
+COPY backend/tsconfig.json ./tsconfig.json
+COPY backend/nest-cli.json ./nest-cli.json
+
+# Copy Prisma schema for generation
+COPY backend/prisma ./prisma
+
+# Generate Prisma Client
+RUN npx prisma generate
 
 # Build application
 RUN npm run build
@@ -33,6 +40,12 @@ COPY backend/package*.json ./
 
 # Install only production dependencies
 RUN npm ci --only=production --legacy-peer-deps && npm cache clean --force
+
+# Copy Prisma schema from backend directory
+COPY backend/prisma ./prisma
+
+# Generate Prisma Client for production
+RUN npx prisma generate
 
 # Copy built application from builder
 COPY --from=builder /app/dist ./dist
