@@ -172,15 +172,31 @@ jobs:
           
           sleep 5
           
-          echo "Step 3: Plan Terraform changes"
+          echo "Step 3: Try to plan Terraform changes"
           terraform plan \
             -var-file=terraform.tfvars \
-            -out=tfplan || true
+            -out=tfplan 2>&1 | tee /tmp/plan.log || PLAN_EXIT=$?
+          
+          if [ -f tfplan ]; then
+            echo "Plan succeeded, using saved plan"
+            APPLY_INPUT=tfplan
+          else
+            echo "Plan failed or skipped, will use direct apply"
+            APPLY_INPUT=""
+          fi
           
           echo "Step 4: Apply Terraform with timeout and retry"
           # Try apply with 20 minute timeout
-          timeout 1200 terraform apply -input=false tfplan 2>&1 | tee /tmp/apply.log
-          APPLY_EXIT=${PIPESTATUS[0]}
+          if [ -z "$APPLY_INPUT" ]; then
+            timeout 1200 terraform apply \
+              -var-file=terraform.tfvars \
+              -auto-approve \
+              -input=false 2>&1 | tee /tmp/apply.log || APPLY_EXIT=${PIPESTATUS[0]}
+          else
+            timeout 1200 terraform apply -input=false $APPLY_INPUT 2>&1 | tee /tmp/apply.log || APPLY_EXIT=${PIPESTATUS[0]}
+          fi
+          
+          APPLY_EXIT=${APPLY_EXIT:-0}
           
           if [ $APPLY_EXIT -ne 0 ]; then
             echo "⚠️  First apply attempt failed, checking for lock issues..."
@@ -199,7 +215,14 @@ jobs:
               
               # Retry apply
               echo "Retrying terraform apply..."
-              terraform apply -input=false tfplan
+              if [ -z "$APPLY_INPUT" ]; then
+                terraform apply \
+                  -var-file=terraform.tfvars \
+                  -auto-approve \
+                  -input=false
+              else
+                terraform apply -input=false $APPLY_INPUT
+              fi
             else
               exit $APPLY_EXIT
             fi
