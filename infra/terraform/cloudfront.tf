@@ -39,7 +39,7 @@ resource "aws_cloudfront_distribution" "assets" {
 
   viewer_certificate {
     cloudfront_default_certificate = var.enable_domain ? false : true
-    acm_certificate_arn            = var.enable_domain ? aws_acm_certificate.cloudfront.arn : null
+    acm_certificate_arn            = var.enable_domain ? "arn:aws:acm:us-east-1:425687053209:certificate/8f2fbc6d-3ad2-4725-becb-04e25cc6979e" : null
     minimum_protocol_version       = var.enable_domain ? "TLSv1.2_2021" : "TLSv1"
     ssl_support_method             = var.enable_domain ? "sni-only" : null
   }
