@@ -5,6 +5,8 @@ import * as Sentry from '@sentry/node';
 import { AppModule } from './app.module';
 
 // Deployment trigger - v1.10 (Enhanced startup logging)
+// ✅ Workflow trigger point - e8a93ccb-retry
+
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
   
@@ -94,3 +96,4 @@ bootstrap().catch((error) => {
 // Build fix v2
 // Prod stage fix
 // ECS deploy fix
+
