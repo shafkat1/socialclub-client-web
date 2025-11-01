@@ -150,6 +150,14 @@ export class ApiClient {
     return this.request("/conversations");
   }
 
+  // Notifications (debug)
+  async sendTestNotification(message?: string) {
+    return this.request("/notifications/test", {
+      method: "POST",
+      body: JSON.stringify({ message }),
+    });
+  }
+
   // Auth
   async signUp(email: string, password: string, name: string, dateOfBirth: string) {
     const response = await this.request("/auth/signup", {

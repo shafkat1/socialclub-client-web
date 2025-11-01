@@ -35,6 +35,7 @@ import { api } from "./utils/api";
 import { LogOut } from "lucide-react";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { fetchRuntimeConfig } from "./utils/runtimeConfig";
+import { WEB_APP_VERSION } from "./version";
 
 function App() {
   const [showWelcome, setShowWelcome] = useState(() => {
@@ -81,6 +82,10 @@ function App() {
     fetchRuntimeConfig().then((cfg) => {
       if (cfg?.featureFlags) {
         console.log("Feature flags:", cfg.featureFlags);
+      }
+      const minWeb = cfg?.minimumAppVersion?.web;
+      if (minWeb && compareVersions(WEB_APP_VERSION, minWeb) < 0) {
+        toast.info(`New version available. Please refresh.`, { duration: 8000 });
       }
     });
 
@@ -718,6 +723,22 @@ function App() {
                       <LogOut className="h-4 w-4 mr-2" />
                       Sign Out
                     </Button>
+                    <div className="mt-3">
+                      <Button
+                        variant="secondary"
+                        onClick={async () => {
+                          try {
+                            const r = await api.sendTestNotification("Hello from web");
+                            toast.success("Test push requested. Check device.");
+                            console.log("Notification test result", r);
+                          } catch (e: any) {
+                            toast.error(e.message || "Failed to send test notification");
+                          }
+                        }}
+                      >
+                        Send Test Push
+                      </Button>
+                    </div>
                   </div>
                 </Card>
               </div>
@@ -955,3 +976,16 @@ function AppWithErrorBoundary() {
 
 export default AppWithErrorBoundary;
 // Deployment trigger - OIDC ready
+
+// simple semver compare: returns -1 if a<b, 0 if equal, 1 if a>b
+function compareVersions(a: string, b: string): number {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const da = pa[i] || 0;
+    const db = pb[i] || 0;
+    if (da < db) return -1;
+    if (da > db) return 1;
+  }
+  return 0;
+}

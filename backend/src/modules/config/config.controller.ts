@@ -12,6 +12,7 @@ export class AppConfigController {
       minimumAppVersion: {
         ios: '1.0.0',
         android: '1.0.0',
+        web: '1.0.0',
       },
       featureFlags: {
         newCheckout: false,
