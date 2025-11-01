@@ -93,8 +93,14 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("Signup error:", data.error, response.status);
-        throw new Error(data.error || "Sign up failed");
+        const serverMessage =
+          (typeof data === 'string' && data) ||
+          (Array.isArray(data?.message) && data.message[0]) ||
+          data?.message ||
+          (typeof data?.error === 'string' ? data.error : data?.error?.message) ||
+          `Sign up failed`;
+        console.error("Signup error:", data, response.status);
+        throw new Error(serverMessage);
       }
 
       // Map backend token response to expected session shape
@@ -184,8 +190,14 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       const data = await response.json();
 
       if (!response.ok) {
-        console.error("Signin error:", data.error);
-        throw new Error(data.error || "Sign in failed");
+        const serverMessage =
+          (typeof data === 'string' && data) ||
+          (Array.isArray(data?.message) && data.message[0]) ||
+          data?.message ||
+          (typeof data?.error === 'string' ? data.error : data?.error?.message) ||
+          `Sign in failed`;
+        console.error("Signin error:", data);
+        throw new Error(serverMessage);
       }
 
       console.log("Signin successful");
