@@ -65,7 +65,12 @@ async function bootstrap() {
 
       const document = SwaggerModule.createDocument(app, config);
       SwaggerModule.setup('api/docs', app, document);
+      // Expose raw OpenAPI JSON for SDK generation
+      const http = app.getHttpAdapter();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (http as any).get?.('/api/openapi.json', (_req: unknown, res: any) => res.json(document));
       logger.log('✅ Swagger documentation enabled at /api/docs');
+      logger.log('✅ OpenAPI JSON available at /api/openapi.json');
     }
 
     const port = process.env.PORT || 3000;

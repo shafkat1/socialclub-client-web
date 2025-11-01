@@ -20,6 +20,8 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { GroupsModule } from './modules/groups/groups.module';
 import { PresenceModule } from './modules/presence/presence.module';
 import { RedemptionsModule } from './modules/redemptions/redemptions.module';
+import { AppConfigModule } from './modules/config/config.module';
+import { DevicesModule } from './modules/devices/devices.module';
 
 // Services
 import { PrismaService } from './common/services/prisma.service';
@@ -57,6 +59,8 @@ import { SentryInterceptor } from './common/interceptors/sentry.interceptor';
     GroupsModule,
     PresenceModule,
     RedemptionsModule,
+    AppConfigModule,
+    DevicesModule,
   ],
   providers: [
     PrismaService,
