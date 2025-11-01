@@ -41,6 +41,7 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(() => {
     return !localStorage.getItem("hasVisited");
   });
+  const [runtimeConfig, setRuntimeConfig] = useState<any>(null);
   const [session, setSession] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -80,6 +81,7 @@ function App() {
   useEffect(() => {
     // Load runtime config (feature flags, min versions)
     fetchRuntimeConfig().then((cfg) => {
+      setRuntimeConfig(cfg);
       if (cfg?.featureFlags) {
         console.log("Feature flags:", cfg.featureFlags);
       }
@@ -754,16 +756,18 @@ function App() {
         </Tabs>
         
         {/* Bartender Verification Button (bottom right) */}
-        <div className="fixed bottom-6 right-6">
-          <Button
-            size="lg"
-            variant="secondary"
-            onClick={() => setBartenderDialogOpen(true)}
-            className="shadow-lg"
-          >
-            🍺 Bartender Mode
-          </Button>
-        </div>
+        {runtimeConfig?.featureFlags?.bartenderMode && (
+          <div className="fixed bottom-6 right-6">
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={() => setBartenderDialogOpen(true)}
+              className="shadow-lg"
+            >
+              🍺 Bartender Mode
+            </Button>
+          </div>
+        )}
       </div>
     );
   };
