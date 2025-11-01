@@ -21,13 +21,6 @@ resource "aws_internet_gateway" "igw" {
   tags = { Name = "${local.name_prefix}-igw" }
 }
 
-resource "aws_eip" "nat" {
-  count      = var.az_count
-  domain     = "vpc"
-  depends_on = [aws_internet_gateway.igw]
-  tags       = { Name = "${local.name_prefix}-nat-eip-${count.index}" }
-}
-
 resource "aws_subnet" "public" {
   for_each = { for idx, az in local.azs : idx => az }
   vpc_id                  = aws_vpc.main.id
@@ -51,13 +44,6 @@ resource "aws_subnet" "private" {
   }
 }
 
-resource "aws_nat_gateway" "nat" {
-  for_each      = aws_subnet.public
-  allocation_id = aws_eip.nat[tonumber(each.key)].id
-  subnet_id     = each.value.id
-  tags          = { Name = "${local.name_prefix}-nat-${each.key}" }
-}
-
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
   tags   = { Name = "${local.name_prefix}-rt-public" }
@@ -79,13 +65,6 @@ resource "aws_route_table" "private" {
   for_each = aws_subnet.private
   vpc_id   = aws_vpc.main.id
   tags     = { Name = "${local.name_prefix}-rt-private-${each.key}" }
-}
-
-resource "aws_route" "private_nat" {
-  for_each                  = aws_route_table.private
-  route_table_id            = each.value.id
-  destination_cidr_block    = "0.0.0.0/0"
-  nat_gateway_id            = aws_nat_gateway.nat[each.key].id
 }
 
 # Security groups

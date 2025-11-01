@@ -63,9 +63,9 @@ resource "aws_ecs_service" "placeholder" {
   launch_type     = "FARGATE"
 
   network_configuration {
-    subnets         = [for s in aws_subnet.private : s.id]
+    subnets         = [for s in aws_subnet.public : s.id]
     security_groups = [aws_security_group.services.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -125,8 +125,8 @@ resource "aws_ecs_service" "prod_placeholder" {
   deployment_minimum_healthy_percent = 100
 
   network_configuration {
-    subnets         = [for s in aws_subnet.private : s.id]
+    subnets         = [for s in aws_subnet.public : s.id]
     security_groups = [aws_security_group.services.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 }
