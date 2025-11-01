@@ -53,7 +53,7 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
 
       - name: Get ECR Registry
         id: ecr-registry
@@ -138,7 +138,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: ${{ env.TERRAFORM_VERSION }}
 
@@ -410,5 +410,4 @@ jobs:
           echo "✅ Backend deployment complete"
           echo "Environment: ${{ steps.env.outputs.environment }}"
           echo "Image URI: ${{ needs.build-backend.outputs.image-uri }}"
-
 
