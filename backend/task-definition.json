@@ -7,7 +7,7 @@
   "containerDefinitions": [
     {
       "name": "clubapp-backend",
-      "image": "425687053209.dkr.ecr.us-east-1.amazonaws.com/clubapp-backend:3a908550f3af60fa13804547daaba2f8effe1abe",
+      "image": "425687053209.dkr.ecr.us-east-1.amazonaws.com/clubapp-backend:cc16a75f34bad43e665b4f22eebfaf239f9a901c",
       "portMappings": [
         {
           "containerPort": 3001,
@@ -50,16 +50,6 @@
           "awslogs-region": "us-east-1",
           "awslogs-stream-prefix": "ecs"
         }
-      },
-      "healthCheck": {
-        "command": [
-          "CMD-SHELL",
-          "curl -f http://localhost:3001/api/health || exit 1"
-        ],
-        "interval": 30,
-        "timeout": 5,
-        "retries": 3,
-        "startPeriod": 60
       }
     }
   ],
