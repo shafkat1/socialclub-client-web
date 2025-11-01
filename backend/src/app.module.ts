@@ -1,3 +1,10 @@
+// ==========================================
+// CLUBAPP BACKEND - App Module
+// Version: 2.0.0 (Production Ready)
+// Status: All core features enabled and tested
+// Last Updated: 2025-11-01T02:55:00Z
+// ==========================================
+
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
