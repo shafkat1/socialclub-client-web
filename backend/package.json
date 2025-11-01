@@ -23,7 +23,7 @@
     "migration:reset": "prisma migrate reset",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
-    "openapi:gen": "ts-node -O '{\"module\":\"commonjs\"}' scripts/openapi.ts",
+    "openapi:gen": "ts-node -r tsconfig-paths/register scripts/openapi.ts",
     "sdk:ts": "openapi-generator-cli generate -i openapi/openapi.json -g typescript-axios -o ../packages/api-sdk-ts --additional-properties=useSingleRequestParameter=true,withSeparateModelsAndApi=true,supportsES6=true --skip-validate-spec"
   },
   "dependencies": {
