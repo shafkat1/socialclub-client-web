@@ -341,8 +341,8 @@ jobs:
             echo "Skipping ECS deployment - use manual deployment instead"
           fi
 
-      - name: Update ECS task definition
-        id: task-def
+      - name: Calculate image URI
+        id: image-calc
         if: steps.task-def-check.outputs.exists == 'true'
         run: |
           # Calculate AWS account ID dynamically
@@ -351,21 +351,24 @@ jobs:
           # Calculate image URI - same way as build job does
           IMAGE_URI="${AWS_ACCOUNT_ID}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_REPOSITORY }}:${{ github.sha }}"
           
-          echo "Image URI: $IMAGE_URI"
-          
-          if [ -z "$IMAGE_URI" ] || [ -z "$AWS_ACCOUNT_ID" ]; then
-            echo "ERROR: Could not determine Image URI or AWS Account ID!"
-            exit 1
-          fi
-          
+          echo "Calculated Image URI: $IMAGE_URI"
           echo "image-uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
 
-      - name: Update ECS task definition (render)
+      - name: Render task definition with new image
         id: task-def-render
         if: steps.task-def-check.outputs.exists == 'true'
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ./backend/task-definition.json
+          container-name: clubapp-backend
+          image: ${{ steps.image-calc.outputs.image-uri }}
+
+      - name: Debug rendered task definition
+        if: steps.task-def-check.outputs.exists == 'true'
         run: |
-          echo "Debugging rendered task definition:"
-          cat ./backend/task-definition.json
+          echo "Rendered task definition path: ${{ steps.task-def-render.outputs.task-definition }}"
+          echo "File contents:"
+          cat "${{ steps.task-def-render.outputs.task-definition }}"
 
       - name: Deploy to ECS
         if: steps.task-def-check.outputs.exists == 'true'
@@ -407,4 +410,4 @@ jobs:
         run: |
           echo "✅ Backend deployment complete"
           echo "Environment: ${{ steps.env.outputs.environment }}"
-          echo "Image URI: ${{ needs.build-backend.outputs.image-uri }}"
+          echo "Image URI: ${{ steps.image-calc.outputs.image-uri }}"
