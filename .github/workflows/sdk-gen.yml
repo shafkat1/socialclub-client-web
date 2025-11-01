@@ -1,0 +1,35 @@
+name: Generate SDKs
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [ main ]
+    paths:
+      - 'backend/**'
+
+jobs:
+  ts-sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install backend deps
+        working-directory: backend
+        run: npm ci
+      - name: Generate OpenAPI JSON
+        working-directory: backend
+        run: npm run openapi:gen
+      - name: Install openapi generator
+        run: npm i -g @openapitools/openapi-generator-cli@2.7.0
+      - name: Generate TypeScript SDK
+        working-directory: backend
+        run: openapi-generator-cli generate -i openapi/openapi.json -g typescript-axios -o ../packages/api-sdk-ts --additional-properties=useSingleRequestParameter=true,withSeparateModelsAndApi=true,supportsES6=true --skip-validate-spec
+      - name: Upload SDK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-sdk-ts
+          path: packages/api-sdk-ts
+
+
