@@ -398,7 +398,7 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
     
     try {
       const response = await fetch(
-        `${config.api.baseUrl}/auth/test-signin`,
+        `${config.api.baseUrl}/auth/test-login`,
         {
           method: "POST",
           headers: {

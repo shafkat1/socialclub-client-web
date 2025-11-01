@@ -49,7 +49,7 @@ export class ApiClient {
 
   // Profile
   async getProfile() {
-    return this.request("/profile");
+    return this.request("/auth/me");
   }
 
   async updateProfile(updates: any) {
