@@ -325,15 +325,10 @@ jobs:
       - name: Determine environment
         id: env
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "cluster=clubapp-prod" >> $GITHUB_OUTPUT
-            echo "service=clubapp-backend-prod" >> $GITHUB_OUTPUT
-            echo "environment=production" >> $GITHUB_OUTPUT
-          else
-            echo "cluster=clubapp-dev" >> $GITHUB_OUTPUT
-            echo "service=clubapp-backend" >> $GITHUB_OUTPUT
-            echo "environment=staging" >> $GITHUB_OUTPUT
-          fi
+          # Always deploy to clubapp-dev-ecs since that's our active cluster
+          echo "cluster=clubapp-dev-ecs" >> $GITHUB_OUTPUT
+          echo "service=clubapp-dev-svc" >> $GITHUB_OUTPUT
+          echo "environment=production" >> $GITHUB_OUTPUT
 
       - name: Check if task definition exists
         id: task-def-check
