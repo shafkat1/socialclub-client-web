@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../common/services/prisma.service';
 import { S3Service } from '../../common/services/s3.service';
 
@@ -10,10 +10,14 @@ export class UpdateProfileDto {
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger('UsersService');
+
   constructor(
     private prisma: PrismaService,
     private s3: S3Service,
-  ) {}
+  ) {
+    this.logger.log('✅ UsersService initialized with all dependencies');
+  }
 
   // ============================================
   // PROFILE MANAGEMENT

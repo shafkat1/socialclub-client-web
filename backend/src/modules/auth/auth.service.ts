@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../common/services/prisma.service';
 import { RedisService } from '../../common/services/redis.service';
@@ -8,6 +8,7 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger('AuthService');
   private twilioClient: any;
 
   constructor(
@@ -22,6 +23,7 @@ export class AuthService {
         process.env.TWILIO_AUTH_TOKEN,
       );
     }
+    this.logger.log('✅ AuthService initialized');
   }
 
   // ============================================
