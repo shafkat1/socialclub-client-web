@@ -97,6 +97,18 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
         throw new Error(data.error || "Sign up failed");
       }
 
+      // Map backend token response to expected session shape
+      if (data && (data.accessToken || data.access_token)) {
+        const session = {
+          access_token: data.accessToken || data.access_token,
+          refresh_token: data.refreshToken || data.refresh_token,
+          user: data.user,
+          expires_in: data.expiresIn || data.expires_in,
+        };
+        onAuthSuccess(session);
+        return;
+      }
+
       console.log("Signup successful, checking for session...");
 
       // Check if session was returned from signup
@@ -135,7 +147,13 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
         }
 
         console.log("Auto sign-in successful");
-        onAuthSuccess(signinData.session);
+        const session = signinData.session || {
+          access_token: signinData.accessToken || signinData.access_token,
+          refresh_token: signinData.refreshToken || signinData.refresh_token,
+          user: signinData.user,
+          expires_in: signinData.expiresIn || signinData.expires_in,
+        };
+        onAuthSuccess(session);
       }
     } catch (err: any) {
       console.error("Signup exception:", err);
@@ -171,7 +189,13 @@ export function AuthScreen({ onAuthSuccess }: AuthScreenProps) {
       }
 
       console.log("Signin successful");
-      onAuthSuccess(data.session);
+      const session = data.session || {
+        access_token: data.accessToken || data.access_token,
+        refresh_token: data.refreshToken || data.refresh_token,
+        user: data.user,
+        expires_in: data.expiresIn || data.expires_in,
+      };
+      onAuthSuccess(session);
     } catch (err: any) {
       console.error("Signin exception:", err);
       setError(err.message);
