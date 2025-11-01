@@ -22,6 +22,7 @@ import { PresenceModule } from './modules/presence/presence.module';
 import { RedemptionsModule } from './modules/redemptions/redemptions.module';
 import { AppConfigModule } from './modules/config/config.module';
 import { DevicesModule } from './modules/devices/devices.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 // Services
 import { PrismaService } from './common/services/prisma.service';
@@ -61,6 +62,7 @@ import { SentryInterceptor } from './common/interceptors/sentry.interceptor';
     RedemptionsModule,
     AppConfigModule,
     DevicesModule,
+    NotificationsModule,
   ],
   providers: [
     PrismaService,

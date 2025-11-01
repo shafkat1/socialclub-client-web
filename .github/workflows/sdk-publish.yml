@@ -1,0 +1,40 @@
+name: Publish SDK (GitHub Packages)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install backend deps
+        working-directory: backend
+        run: npm ci
+      - name: Generate OpenAPI JSON
+        working-directory: backend
+        run: npm run openapi:gen
+      - name: Install openapi generator
+        run: npm i -g @openapitools/openapi-generator-cli@2.7.0
+      - name: Generate TS SDK
+        working-directory: backend
+        run: openapi-generator-cli generate -i openapi/openapi.json -g typescript-axios -o ../packages/api-sdk-ts --additional-properties=useSingleRequestParameter=true,withSeparateModelsAndApi=true,supportsES6=true --skip-validate-spec
+      - name: Prepare package for GitHub Packages
+        working-directory: packages/api-sdk-ts
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          node -e "const fs=require('fs'); const p=require('./package.json'); p.name='@'+process.env.OWNER+'/api-sdk'; p.version=p.version||'0.0.0'; fs.writeFileSync('package.json', JSON.stringify(p,null,2));"
+          echo "//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}" > .npmrc
+          echo "@${OWNER}:registry=https://npm.pkg.github.com" >> .npmrc
+      - name: Publish
+        working-directory: packages/api-sdk-ts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm publish --access public || echo "Publish skipped (already exists or permissions)"
+
+

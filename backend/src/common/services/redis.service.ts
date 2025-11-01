@@ -111,4 +111,13 @@ export class RedisService {
       await this.client.quit();
     }
   }
+
+  async keys(pattern: string): Promise<string[]> {
+    await this.ensureRedisConnection();
+    if (!this.client || !this.isConnected) {
+      this.logger.warn('Redis not available, returning empty list for keys');
+      return [];
+    }
+    return this.client.keys(pattern);
+  }
 }

@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text, TextInput, Button, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, SafeAreaView, ActivityIndicator, Platform } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
 import { api, setToken } from './api';
 
 type RootStackParamList = {
@@ -23,6 +25,27 @@ function SignInScreen({ navigation }: any) {
     try {
       const resp = await api.signin(email, password);
       await setToken(resp.accessToken);
+      // Register device token (Expo push) if possible
+      try {
+        let expoToken = '';
+        if (Device.isDevice) {
+          const { status: existingStatus } = await Notifications.getPermissionsAsync();
+          let finalStatus = existingStatus;
+          if (existingStatus !== 'granted') {
+            const { status } = await Notifications.requestPermissionsAsync();
+            finalStatus = status;
+          }
+          if (finalStatus === 'granted') {
+            const token = await Notifications.getExpoPushTokenAsync();
+            expoToken = token.data;
+          }
+        }
+        if (expoToken) {
+          await api.registerDevice(expoToken, '1.0.0');
+        }
+      } catch (_) {
+        // Non-fatal; continue
+      }
       navigation.replace('Home');
     } catch (e: any) {
       setError(e.message);
