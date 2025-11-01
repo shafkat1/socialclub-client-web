@@ -34,6 +34,7 @@ import { toast, Toaster } from "sonner@2.0.3";
 import { api } from "./utils/api";
 import { LogOut } from "lucide-react";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { fetchRuntimeConfig } from "./utils/runtimeConfig";
 
 function App() {
   const [showWelcome, setShowWelcome] = useState(() => {
@@ -74,8 +75,15 @@ function App() {
   const [selectedOfferForRedemption, setSelectedOfferForRedemption] = useState<Offer | null>(null);
   const [bartenderDialogOpen, setBartenderDialogOpen] = useState(false);
 
-  // Check for existing session on mount
+  // Check for existing session on mount and fetch runtime config
   useEffect(() => {
+    // Load runtime config (feature flags, min versions)
+    fetchRuntimeConfig().then((cfg) => {
+      if (cfg?.featureFlags) {
+        console.log("Feature flags:", cfg.featureFlags);
+      }
+    });
+
     const token = api.getAccessToken();
     if (token) {
       loadUserData(token);
