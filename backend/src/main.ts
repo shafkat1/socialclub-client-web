@@ -112,6 +112,7 @@ bootstrap().catch((error) => {
 // Build fix v2
 // Prod stage fix
 // ECS deploy fix
+// deploy-trigger: mobile-scaffold-sync
 
 
 
