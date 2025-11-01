@@ -22,14 +22,14 @@ export const config = {
   api: {
     // ✅ Backend API base URL (NOT Supabase)
     get baseUrl() {
-      // Try environment variable first (for production/staging)
-      if (import.meta.env?.VITE_API_URL) {
-        return import.meta.env.VITE_API_URL;
-      }
-      
-      // In production, default to same-origin /api behind CloudFront
+      // In production, ALWAYS use same-origin /api behind CloudFront
       if (import.meta.env?.PROD) {
         return `${window.location.origin}/api`;
+      }
+      
+      // For local development, allow VITE_API_URL override
+      if (import.meta.env?.VITE_API_URL) {
+        return import.meta.env.VITE_API_URL;
       }
       
       // Development default
