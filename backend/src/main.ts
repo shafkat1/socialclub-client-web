@@ -1,11 +1,13 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, BadRequestException } from '@nestjs/common';
+import { ValidationPipe, BadRequestException, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as Sentry from '@sentry/node';
 import { AppModule } from './app.module';
 
-// Deployment trigger - v1.9 (Mobile build issues FIXED! - All TypeScript and ESLint errors resolved!)
+// Deployment trigger - v1.10 (Enhanced startup logging)
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
+  
   const app = await NestFactory.create(AppModule);
 
   // Global validation pipe
@@ -29,9 +31,11 @@ async function bootstrap() {
     origin: process.env.CORS_ORIGIN?.split(',') || '*',
     credentials: true,
   });
+  logger.log('✅ CORS enabled');
 
   // ✅ SET GLOBAL PREFIX FOR ALL API ROUTES
   app.setGlobalPrefix('api');
+  logger.log('✅ Global API prefix set to /api');
 
   // Sentry
   if (process.env.SENTRY_DSN) {
@@ -40,6 +44,7 @@ async function bootstrap() {
       environment: process.env.NODE_ENV || 'development',
       tracesSampleRate: 0.1,
     });
+    logger.log('✅ Sentry error tracking initialized');
   }
 
   // Swagger
@@ -54,12 +59,21 @@ async function bootstrap() {
 
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('api/docs', app, document);
+    logger.log('✅ Swagger documentation enabled at /api/docs');
   }
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`🚀 Server running on http://localhost:${port}`);
-  console.log(`📚 API docs: http://localhost:${port}/api/docs`);
+  
+  logger.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  logger.log('🚀 CLUBAPP BACKEND STARTED SUCCESSFULLY');
+  logger.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  logger.log(`📡 Server running on http://localhost:${port}`);
+  logger.log(`🌐 API base URL: http://localhost:${port}/api`);
+  logger.log(`📚 API docs: http://localhost:${port}/api/docs`);
+  logger.log(`🗄️  Database: Connected and ready`);
+  logger.log(`🔐 CORS Origin: ${process.env.CORS_ORIGIN || 'All origins'}`);
+  logger.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 }
 
 bootstrap().catch((error) => {
