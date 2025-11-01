@@ -1,11 +1,10 @@
 import { Module } from '@nestjs/common';
 import { RedemptionsController } from './redemptions.controller';
 import { RedemptionsService } from './redemptions.service';
-import { PrismaService } from '../../common/services/prisma.service';
 
 @Module({
   controllers: [RedemptionsController],
-  providers: [RedemptionsService, PrismaService],
+  providers: [RedemptionsService],
   exports: [RedemptionsService],
 })
 export class RedemptionsModule {}
