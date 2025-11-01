@@ -369,6 +369,12 @@ jobs:
           container-name: clubapp-backend
           image: ${{ steps.task-def.outputs.image-uri }}
 
+      - name: Debug rendered task definition
+        if: steps.task-def-check.outputs.exists == 'true'
+        run: |
+          echo "Debugging rendered task definition:"
+          cat ./backend/task-definition.json
+
       - name: Deploy to ECS
         if: steps.task-def-check.outputs.exists == 'true'
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
@@ -410,4 +416,3 @@ jobs:
           echo "✅ Backend deployment complete"
           echo "Environment: ${{ steps.env.outputs.environment }}"
           echo "Image URI: ${{ needs.build-backend.outputs.image-uri }}"
-
