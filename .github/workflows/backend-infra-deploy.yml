@@ -363,7 +363,7 @@ jobs:
       - name: Update ECS task definition (render)
         id: task-def-render
         if: steps.task-def-check.outputs.exists == 'true'
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        uses: aws-actions/amazon-ecs-render-task-definition@v2
         with:
           task-definition: ./backend/task-definition.json
           container-name: clubapp-backend
