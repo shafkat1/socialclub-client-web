@@ -33,7 +33,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Install dumb-init and OpenSSL for Prisma
-RUN apk add --no-cache dumb-init openssl
+RUN apk add --no-cache dumb-init openssl curl
 
 # Copy backend package files
 COPY package*.json ./
@@ -60,10 +60,10 @@ USER nodejs
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3000/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+  CMD curl -f http://localhost:3001/api/health || exit 1
 
 # Expose port
-EXPOSE 3000
+EXPOSE 3001
 
 # Use dumb-init to handle signals
 ENTRYPOINT ["dumb-init", "--"]
