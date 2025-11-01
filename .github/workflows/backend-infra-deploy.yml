@@ -357,11 +357,26 @@ jobs:
       - name: Render task definition with new image
         id: task-def-render
         if: steps.task-def-check.outputs.exists == 'true'
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: ./backend/task-definition.json
-          container-name: clubapp-backend
-          image: ${{ steps.image-calc.outputs.image-uri }}
+        run: |
+          # Read the original task definition
+          TASK_DEF=$(cat ./backend/task-definition.json)
+          
+          # Use jq to update ONLY the clubapp-backend container's image
+          RENDERED_TASK_DEF=$(echo "$TASK_DEF" | jq \
+            --arg image "${{ steps.image-calc.outputs.image-uri }}" \
+            '(.containerDefinitions[] | select(.name == "clubapp-backend") | .image) |= $image')
+          
+          # Create the output file in a temp directory
+          mkdir -p /tmp/ecs-task-defs
+          OUTPUT_FILE="/tmp/ecs-task-defs/task-definition.json"
+          echo "$RENDERED_TASK_DEF" > "$OUTPUT_FILE"
+          
+          # Output the path
+          echo "task-definition=$OUTPUT_FILE" >> $GITHUB_OUTPUT
+          
+          # Verify the rendered definition
+          echo "Rendered task definition:"
+          jq '.containerDefinitions[] | {name: .name, image: .image}' "$OUTPUT_FILE"
 
       - name: Debug rendered task definition
         if: steps.task-def-check.outputs.exists == 'true'
