@@ -27,13 +27,18 @@ export const config = {
         return import.meta.env.VITE_API_URL;
       }
       
+      // In production, default to same-origin /api behind CloudFront
+      if (import.meta.env?.PROD) {
+        return `${window.location.origin}/api`;
+      }
+      
       // Development default
       if (import.meta.env?.DEV) {
         return 'http://localhost:3001/api';
       }
       
-      // Production fallback
-      return 'https://api.socialclub.com/api';
+      // Fallback (should not be used)
+      return `${window.location.origin}/api`;
     },
   },
   // Feature flags for development
