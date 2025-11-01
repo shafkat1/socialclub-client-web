@@ -36,6 +36,7 @@ import { LogOut } from "lucide-react";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { fetchRuntimeConfig } from "./utils/runtimeConfig";
 import { WEB_APP_VERSION } from "./version";
+import { initSentry } from "./observability";
 
 function App() {
   const [showWelcome, setShowWelcome] = useState(() => {
@@ -84,6 +85,9 @@ function App() {
       setRuntimeConfig(cfg);
       if (cfg?.featureFlags) {
         console.log("Feature flags:", cfg.featureFlags);
+      }
+      if (cfg?.sentry?.dsn) {
+        initSentry(cfg.sentry.dsn);
       }
       const minWeb = cfg?.minimumAppVersion?.web;
       if (minWeb && compareVersions(WEB_APP_VERSION, minWeb) < 0) {

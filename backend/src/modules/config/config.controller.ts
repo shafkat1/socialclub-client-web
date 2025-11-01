@@ -16,6 +16,10 @@ export class AppConfigController {
       },
       featureFlags: {
         newCheckout: false,
+        bartenderMode: true,
+      },
+      sentry: {
+        dsn: process.env.SENTRY_WEB_DSN || process.env.SENTRY_DSN || '',
       },
     };
   }
