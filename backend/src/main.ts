@@ -4,7 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as Sentry from '@sentry/node';
 import { AppModule } from './app.module';
 
-// Deployment trigger - service container fix applied
+// Deployment trigger - force rebuild v954666773
 // ✅ Workflow trigger point - e8a93ccb-retry
 
 async function bootstrap() {
@@ -84,7 +84,7 @@ bootstrap().catch((error) => {
 });
 // Deployment ready
 // Rebuild trigger 10/31/2025 08:41:41
-// Deployment trigger - service container fix applied
+// Deployment trigger - force rebuild v954666773
 // Lock bypass fix applied
 // refresh-only fix
 // Docker cache fix
@@ -96,6 +96,7 @@ bootstrap().catch((error) => {
 // Build fix v2
 // Prod stage fix
 // ECS deploy fix
+
 
 
 
